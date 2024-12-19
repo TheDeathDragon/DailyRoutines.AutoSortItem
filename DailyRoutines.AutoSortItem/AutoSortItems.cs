@@ -34,20 +34,13 @@ public class AutoSortItems : DailyModuleBase
         Category = ModuleCategories.System,
     };
 
-
     public override void Init()
     {
         TaskHelper ??= new TaskHelper { TimeLimitMS = 30_000 };
         _config = LoadConfig<AutoSortItemConfig>();
-        _armouryChestId = _config.ArmouryChestId;
-        _armouryItemLevel = _config.ArmouryItemLevel;
-        _armouryCategory = _config.ArmouryCategory;
-        _inventoryHq = _config.InventoryHq;
-        _inventoryId = _config.InventoryId;
-        _inventoryItemLevel = _config.InventoryItemLevel;
-        _inventoryCategory = _config.InventoryCategory;
-        _inventoryTab = _config.InventoryTab;
-        _sendSortMessage = _config.SendSortMessage;
+        
+        SyncFieldsWithConfig();
+
         DService.ClientState.TerritoryChanged += OnZoneChanged;
     }
 
@@ -83,24 +76,7 @@ public class AutoSortItems : DailyModuleBase
         ImGui.Spacing();
         if (ImGui.Button("重置设置"))
         {
-            _config.ArmouryCategory = 0;
-            _config.ArmouryChestId = 0;
-            _config.ArmouryItemLevel = 0;
-            _config.InventoryCategory = 0;
-            _config.InventoryHq = 0;
-            _config.InventoryId = 0;
-            _config.InventoryItemLevel = 0;
-            _config.InventoryTab = 0;
-            _config.SendSortMessage = true;
-            _armouryCategory = 0;
-            _armouryChestId = 0;
-            _armouryItemLevel = 0;
-            _inventoryCategory = 0;
-            _inventoryHq = 0;
-            _inventoryId = 0;
-            _inventoryItemLevel = 0;
-            _inventoryTab = 0;
-            _sendSortMessage = true;
+            ResetConfigToDefault();
             SaveConfig(_config);
         }
     }
@@ -108,14 +84,16 @@ public class AutoSortItems : DailyModuleBase
     private void DrawTableRow(string label, ref int value, string[] options, string notes)
     {
         ImGui.TableNextRow();
-
         ImGui.TableSetColumnIndex(0);
         ImGui.Text(label);
 
         ImGui.TableSetColumnIndex(1);
         ImGui.SetNextItemWidth(-1);
-        if (ImGui.Combo("##" + label, ref value, options, options.Length))
+
+        int oldValue = value;
+        if (ImGui.Combo("##" + label, ref value, options, options.Length) && value != oldValue)
         {
+            UpdateConfigFromFields();
             SaveConfig(_config);
         }
 
@@ -126,26 +104,19 @@ public class AutoSortItems : DailyModuleBase
 
     private void SendSortCommand()
     {
-        ChatHelper.Instance.SendMessage($"/itemsort condition armourychest id {_sortOptionsCommand[_armouryChestId]}");
-        ChatHelper.Instance.SendMessage(
-            $"/itemsort condition armourychest itemlevel {_sortOptionsCommand[_armouryItemLevel]}");
-        ChatHelper.Instance.SendMessage(
-            $"/itemsort condition armourychest category {_sortOptionsCommand[_armouryCategory]}");
+        SendSortCondition("armourychest", "id", _armouryChestId);
+        SendSortCondition("armourychest", "itemlevel", _armouryItemLevel);
+        SendSortCondition("armourychest", "category", _armouryCategory);
         ChatHelper.Instance.SendMessage("/itemsort execute armourychest");
-        ChatHelper.Instance.SendMessage($"/itemsort condition inventory hq {_sortOptionsCommand[_inventoryHq]}");
-        ChatHelper.Instance.SendMessage($"/itemsort condition inventory id {_sortOptionsCommand[_inventoryId]}");
-        ChatHelper.Instance.SendMessage(
-            $"/itemsort condition inventory itemlevel {_sortOptionsCommand[_inventoryItemLevel]}");
-        ChatHelper.Instance.SendMessage(
-            $"/itemsort condition inventory category {_sortOptionsCommand[_inventoryCategory]}");
-        switch (_inventoryTab)
+        
+        SendSortCondition("inventory", "hq", _inventoryHq);
+        SendSortCondition("inventory", "id", _inventoryId);
+        SendSortCondition("inventory", "itemlevel", _inventoryItemLevel);
+        SendSortCondition("inventory", "category", _inventoryCategory);
+        
+        if (_inventoryTab == 0)
         {
-            case 0:
-                ChatHelper.Instance.SendMessage("/itemsort condition inventory tab");
-                break;
-            case 1:
-                ChatHelper.Instance.SendMessage("/itemsort execute inventory");
-                break;
+            ChatHelper.Instance.SendMessage("/itemsort condition inventory tab");
         }
 
         ChatHelper.Instance.SendMessage("/itemsort execute inventory");
@@ -153,6 +124,13 @@ public class AutoSortItems : DailyModuleBase
         if (_sendSortMessage)
         {
             ChatHelper.Instance.SendMessage("/e [AutoSortItem] 自动整理物品完成");
+        }
+
+        return;
+
+        void SendSortCondition(string target, string condition, int setting)
+        {
+            ChatHelper.Instance.SendMessage($"/itemsort condition {target} {condition} {_sortOptionsCommand[setting]}");
         }
     }
 
@@ -165,13 +143,39 @@ public class AutoSortItems : DailyModuleBase
 
     private bool? SortItems()
     {
-        if (InfosOm.BetweenAreas || !HelpersOm.IsScreenReady() || InfosOm.OccupiedInEvent) return false;
-        if (DService.ClientState.LocalPlayer is null) return false;
+        if (InfosOm.BetweenAreas || !HelpersOm.IsScreenReady() || InfosOm.OccupiedInEvent) 
+            return false;
+        if (DService.ClientState.LocalPlayer is null) 
+            return false;
+
         TaskHelper.Enqueue(SendSortCommand, "SendSortCommand", 5_000, true, 1);
         return true;
     }
 
     public override void Uninit()
+    {
+        UpdateConfigFromFields();
+        SaveConfig(_config);
+        DService.ClientState.TerritoryChanged -= OnZoneChanged;
+        base.Uninit();
+    }
+
+    private void ResetConfigToDefault()
+    {
+        _config.ArmouryCategory = 0;
+        _config.ArmouryChestId = 0;
+        _config.ArmouryItemLevel = 0;
+        _config.InventoryCategory = 0;
+        _config.InventoryHq = 0;
+        _config.InventoryId = 0;
+        _config.InventoryItemLevel = 0;
+        _config.InventoryTab = 0;
+        _config.SendSortMessage = true;
+
+        SyncFieldsWithConfig();
+    }
+
+    private void UpdateConfigFromFields()
     {
         _config.ArmouryChestId = _armouryChestId;
         _config.ArmouryItemLevel = _armouryItemLevel;
@@ -181,8 +185,32 @@ public class AutoSortItems : DailyModuleBase
         _config.InventoryItemLevel = _inventoryItemLevel;
         _config.InventoryCategory = _inventoryCategory;
         _config.InventoryTab = _inventoryTab;
-        SaveConfig(_config);
-        DService.ClientState.TerritoryChanged -= OnZoneChanged;
-        base.Uninit();
+        _config.SendSortMessage = _sendSortMessage;
+    }
+
+    private void SyncFieldsWithConfig()
+    {
+        _armouryChestId = _config.ArmouryChestId;
+        _armouryItemLevel = _config.ArmouryItemLevel;
+        _armouryCategory = _config.ArmouryCategory;
+        _inventoryHq = _config.InventoryHq;
+        _inventoryId = _config.InventoryId;
+        _inventoryItemLevel = _config.InventoryItemLevel;
+        _inventoryCategory = _config.InventoryCategory;
+        _inventoryTab = _config.InventoryTab;
+        _sendSortMessage = _config.SendSortMessage;
+    }
+
+    internal class AutoSortItemConfig : ModuleConfiguration
+    {
+        public int ArmouryChestId { get; set; }
+        public int ArmouryItemLevel { get; set; }
+        public int ArmouryCategory { get; set; }
+        public int InventoryHq { get; set; }
+        public int InventoryId { get; set; }
+        public int InventoryItemLevel { get; set; }
+        public int InventoryCategory { get; set; }
+        public int InventoryTab { get; set; }
+        public bool SendSortMessage { get; set; }
     }
 }
