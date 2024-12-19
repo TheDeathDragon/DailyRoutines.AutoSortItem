@@ -35,10 +35,11 @@ public class AutoSortItems : DailyModuleBase
         Category = ModuleCategories.System,
     };
 
+
     public override void Init()
     {
         TaskHelper ??= new TaskHelper { TimeLimitMS = 30_000 };
-        _config = new AutoSortItemConfig(this);
+        _config = LoadConfig<AutoSortItemConfig>();
         _armouryChestId = _config.ArmouryChestId;
         _armouryItemLevel = _config.ArmouryItemLevel;
         _armouryCategory = _config.ArmouryCategory;
@@ -77,7 +78,7 @@ public class AutoSortItems : DailyModuleBase
         if (ImGuiOm.CheckboxColored("是否发送物品整理通知", ref _sendSortMessage))
         {
             _config.SendSortMessage = _sendSortMessage;
-            _config.Save(this);
+            SaveConfig(_config);
         }
 
         ImGui.Spacing();
@@ -101,7 +102,7 @@ public class AutoSortItems : DailyModuleBase
             _inventoryItemLevel = 0;
             _inventoryTab = 0;
             _sendSortMessage = true;
-            _config.Save(this);
+            SaveConfig(_config);
         }
     }
 
@@ -116,7 +117,7 @@ public class AutoSortItems : DailyModuleBase
         ImGui.SetNextItemWidth(-1);
         if (ImGui.Combo("##" + label, ref value, options, options.Length))
         {
-            _config.Save(this);
+            SaveConfig(_config);
         }
 
         ImGui.TableSetColumnIndex(2);
@@ -181,7 +182,7 @@ public class AutoSortItems : DailyModuleBase
         _config.InventoryItemLevel = _inventoryItemLevel;
         _config.InventoryCategory = _inventoryCategory;
         _config.InventoryTab = _inventoryTab;
-        _config.Save(this);
+        SaveConfig(_config);
         DService.ClientState.TerritoryChanged -= OnZoneChanged;
         base.Uninit();
     }

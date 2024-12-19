@@ -25,18 +25,5 @@ public class AutoSortItemConfig : ModuleConfiguration
 
     public bool SendSortMessage { get; set; }
 
-    public AutoSortItemConfig(DailyModuleBase module)
-    {
-        var loadConfig = this.Load(module);
-        ArmouryChestId = loadConfig.ArmouryChestId;
-        ArmouryItemLevel = loadConfig.ArmouryItemLevel;
-        ArmouryLevel = loadConfig.ArmouryLevel;
-        ArmouryCategory = loadConfig.ArmouryCategory;
-        InventoryHq = loadConfig.InventoryHq;
-        InventoryId = loadConfig.InventoryId;
-        InventoryItemLevel = loadConfig.InventoryItemLevel;
-        InventoryCategory = loadConfig.InventoryCategory;
-        InventoryTab = loadConfig.InventoryTab;
-        SendSortMessage = loadConfig.SendSortMessage;
-    }
+    public AutoSortItemConfig() { }
 }
