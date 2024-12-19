@@ -1,5 +1,4 @@
 using DailyRoutines.Abstracts;
-using DailyRoutines.Infos;
 using ImGuiNET;
 using OmenTools;
 using OmenTools.Helpers;

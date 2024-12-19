@@ -1,5 +1,4 @@
 ﻿using DailyRoutines.Abstracts;
-using DailyRoutines.Infos;
 
 namespace DailyRoutines.AutoSortItem;
 
@@ -8,8 +7,6 @@ public class AutoSortItemConfig : ModuleConfiguration
     public int ArmouryChestId { get; set; }
 
     public int ArmouryItemLevel { get; set; }
-
-    public int ArmouryLevel { get; set; }
 
     public int ArmouryCategory { get; set; }
 
