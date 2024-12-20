@@ -47,7 +47,7 @@
 
     <!-- 修改成你自己的 DR 路径 -->
     <PropertyGroup>
-        <DailyRoutinesPath>D:\FF14PluginDev\DailyRoutines_latest_test\</DailyRoutinesPath>
+        <DailyRoutinesPath>D:\FF14PluginDev\latest_test\</DailyRoutinesPath>
     </PropertyGroup>
 
     <ItemGroup>
