@@ -32,7 +32,7 @@ public class AutoSortItems : DailyModuleBase
         Title = "自动整理物品",
         Description = "切换地图自动整理物品，包括兵装库",
         ReportUrl = "https://github.com/TheDeathDragon/DailyRoutines.AutoSortItem.git",
-        Category = ModuleCategories.System,
+        Category = ModuleCategories.General,
     };
 
     public override void Init()
