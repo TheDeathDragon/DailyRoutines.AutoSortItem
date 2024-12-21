@@ -16,12 +16,12 @@ using FFXIVClientStructs.FFXIV.Client.Game;
 using Lumina.Excel.GeneratedSheets;
 
 
-namespace DailyRoutines.Modules;
+namespace DailyRoutines.AutoSortItem;
 
 public class AutoSortItems : DailyModuleBase
 {
-    private readonly string[] _sortOptions        = [GetLoc("AutoSortItems-Desc"), GetLoc("AutoSortItems-Asc")];
-    private readonly string[] _tabOptions         = [GetLoc("AutoSortItems-Tab"), GetLoc("AutoSortItems-UnTab")];
+    private readonly string[] _sortOptions        = ["降序", "升序"];
+    private readonly string[] _tabOptions         = ["分页", "不分页"];
     private readonly string[] _sortOptionsCommand = ["des", "asc"];
 
     private static Config _config = null!;
@@ -29,8 +29,8 @@ public class AutoSortItems : DailyModuleBase
     public override ModuleInfo Info => new()
     {
         Author = ["那年雪落"],
-        Title = GetLoc("AutoSortItemsTitle"),
-        Description = GetLoc("AutoSortItemsDescription"),
+        Title = "自动整理物品",
+        Description = "切换地图自动整理物品，包括兵装库",
         ReportUrl = "https://github.com/TheDeathDragon/DailyRoutines.AutoSortItem.git",
         Category = ModuleCategories.General,
     };
@@ -45,6 +45,7 @@ public class AutoSortItems : DailyModuleBase
     private void OnZoneChanged(ushort zone)
     {
         if (zone <= 0) return;
+        Warning("OnZoneChanged");
         TaskHelper.Abort();
         TaskHelper.Enqueue(CheckCanSort);
     }
@@ -73,36 +74,35 @@ public class AutoSortItems : DailyModuleBase
 
     public override void ConfigUI()
     {
-        
-        if (ImGuiOm.CheckboxColored(GetLoc("AutoSortItems-SendSortMessage"), ref _config.SendSortMessage))
+        if (ImGuiOm.CheckboxColored("是否发送物品整理通知", ref _config.SendSortMessage))
         {
             SaveConfig(_config);
         }
 
         ImGui.Spacing();
-        if (ImGui.Button(GetLoc("AutoSortItems-ResetSettings")))
+        if (ImGui.Button("重置设置"))
         {
             ResetConfigToDefault();
         }
-        
+
         ImGui.Spacing();
         var tableSize = ImGui.GetContentRegionAvail() with { Y = 0 };
-        using var table = ImRaii.Table(GetLoc("AutoSortItemsTableTitle"), 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, tableSize);
+        using var table = ImRaii.Table("物品排序方式", 3, ImGuiTableFlags.Borders | ImGuiTableFlags.RowBg, tableSize);
         if (!table) return;
 
-        ImGui.TableSetupColumn(GetLoc("AutoSortItems-ColumnName"), ImGuiTableColumnFlags.WidthFixed, 100f * GlobalFontScale);
-        ImGui.TableSetupColumn(GetLoc("AutoSortItems-ColumnCategory"), ImGuiTableColumnFlags.WidthFixed, 150f * GlobalFontScale);
-        ImGui.TableSetupColumn(GetLoc("AutoSortItems-ColumnDescription"), ImGuiTableColumnFlags.WidthStretch);
+        ImGui.TableSetupColumn("名称", ImGuiTableColumnFlags.WidthFixed, 100f * GlobalFontScale);
+        ImGui.TableSetupColumn("选项", ImGuiTableColumnFlags.WidthFixed, 150f * GlobalFontScale);
+        ImGui.TableSetupColumn("说明", ImGuiTableColumnFlags.WidthStretch);
         ImGui.TableHeadersRow();
-        
-        DrawTableRow(GetLoc("AutoSortItems-RowChestId"), ref _config.ArmouryChestId, _sortOptions, "");
-        DrawTableRow(GetLoc("AutoSortItems-RowItemLevel"), ref _config.ArmouryItemLevel, _sortOptions, "");
-        DrawTableRow(GetLoc("AutoSortItems-RowCategory"), ref _config.ArmouryCategory, _sortOptions, GetLoc("AutoSortItems-ArmouryCategoryDesc"));
-        DrawTableRow(GetLoc("AutoSortItems-RowInventoryHq"), ref _config.InventoryHq, _sortOptions, "");
-        DrawTableRow(GetLoc("AutoSortItems-RowInventoryId"), ref _config.InventoryId, _sortOptions, "");
-        DrawTableRow(GetLoc("AutoSortItems-RowInventoryItemLevel"), ref _config.InventoryItemLevel, _sortOptions, "");
-        DrawTableRow(GetLoc("AutoSortItems-RowInventoryCategory"), ref _config.InventoryCategory, _sortOptions, GetLoc("AutoSortItems-InventoryCategoryDesc"));
-        DrawTableRow(GetLoc("AutoSortItems-RowInventoryTab"), ref _config.InventoryTab, _tabOptions, GetLoc("AutoSortItems-InventoryTabDesc"));
+
+        DrawTableRow("兵装 ID", ref _config.ArmouryChestId, _sortOptions, "");
+        DrawTableRow("兵装等级", ref _config.ArmouryItemLevel, _sortOptions, "");
+        DrawTableRow("兵装类型", ref _config.ArmouryCategory, _sortOptions, "降序的话，生产在前，战职在后");
+        DrawTableRow("物品 HQ", ref _config.InventoryHq, _sortOptions, "");
+        DrawTableRow("物品 ID", ref _config.InventoryId, _sortOptions, "");
+        DrawTableRow("物品等级", ref _config.InventoryItemLevel, _sortOptions, "");
+        DrawTableRow("物品类型", ref _config.InventoryCategory, _sortOptions, "降序的话，生产素材会在石头之前，食物和药会在烟花幻卡之前");
+        DrawTableRow("物品分页", ref _config.InventoryTab, _tabOptions, "分页的话，装备会在第一页，其他物品会在后面几页");
     }
 
     private static unsafe bool IsInNormalMap()
@@ -160,7 +160,7 @@ public class AutoSortItems : DailyModuleBase
 
         if (_config.SendSortMessage)
         {
-            Chat(GetLoc("AutoSortItems-SortMessage"));
+            Chat("[AutoSortItem] 自动整理物品完成");
         }
 
         return;
